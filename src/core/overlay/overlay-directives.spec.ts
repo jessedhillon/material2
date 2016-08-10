@@ -11,6 +11,7 @@ import {
 import {Component, ViewChild} from '@angular/core';
 import {ConnectedOverlayDirective, OverlayModule} from './overlay-directives';
 import {OverlayContainer} from './overlay-container';
+import {ConnectionPositionPair} from './position/connected-position';
 import {ConnectedPositionStrategy} from './position/connected-position-strategy';
 
 
@@ -18,6 +19,7 @@ describe('Overlay directives', () => {
   let builder: TestComponentBuilder;
   let overlayContainerElement: HTMLElement;
   let fixture: ComponentFixture<ConnectedOverlayDirectiveTest>;
+  let fixtureWithPositions: ComponentFixture<ConnectedOverlayDirectiveWithPositionsTest>;
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
@@ -67,6 +69,27 @@ describe('Overlay directives', () => {
     let positions = strategy.positions;
     expect(positions.length).toBeGreaterThan(0);
   });
+
+  describe('with given position', () => {
+    beforeEach(async(() => {
+      builder.createAsync(ConnectedOverlayDirectiveWithPositionsTest).then(f => {
+        fixtureWithPositions = f;
+        fixtureWithPositions.detectChanges();
+      });
+    }));
+
+    it('should use a connected position strategy with a given set of positions', () => {
+      let testComponent: ConnectedOverlayDirectiveWithPositionsTest =
+          fixtureWithPositions.debugElement.componentInstance;
+      let overlayDirective = testComponent.connectedOverlayDirective;
+
+      let strategy =
+          <ConnectedPositionStrategy> overlayDirective.overlayRef.getState().positionStrategy;
+
+      let positions = strategy.positions;
+      expect(testComponent.positions).toBe(overlayDirective.positions);
+    });
+  })
 });
 
 
@@ -79,4 +102,21 @@ describe('Overlay directives', () => {
 })
 class ConnectedOverlayDirectiveTest {
   @ViewChild(ConnectedOverlayDirective) connectedOverlayDirective: ConnectedOverlayDirective;
+}
+
+
+@Component({
+  template: `
+  <button overlay-origin #trigger="overlayOrigin">Toggle menu</button>
+  <template connected-overlay [origin]="trigger" [positions]="positions">
+    <p>Menu content</p>
+  </template>`,
+})
+class ConnectedOverlayDirectiveWithPositionsTest {
+  @ViewChild(ConnectedOverlayDirective) connectedOverlayDirective: ConnectedOverlayDirective;
+  positions: ConnectionPositionPair[] = [
+    new ConnectionPositionPair(
+      {originX: 'start', originY: 'bottom'},
+      {overlayX: 'end', overlayY: 'bottom'})
+  ];
 }
